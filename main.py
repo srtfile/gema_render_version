@@ -29,8 +29,22 @@ def make_session(host, port):
     s.headers["User-Agent"] = UA
     return s
 
+# --- NEW: Root route to prevent the "Not Found" error ---
+@app.get("/")
+def read_root():
+    return {
+        "status": "online",
+        "instructions": "Append an IMDb ID to the URL to get streams.",
+        "example_url": "/tt3501632"
+    }
+
+# --- The main scraping route ---
 @app.get("/{imdb_id}")
 def get_streams(imdb_id: str):
+    # Prevent the favicon request from triggering the scraper
+    if imdb_id == "favicon.ico":
+        return {"error": "Invalid ID"}
+
     referer = f"{BASE}/play/{imdb_id}"
     proxy_list = PROXIES.copy()
     random.shuffle(proxy_list)
@@ -119,6 +133,6 @@ def get_streams(imdb_id: str):
 
     return {
         "imdb_id": imdb_id,
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "timestamp": current_time,
         "tracks": output_tracks
     }
